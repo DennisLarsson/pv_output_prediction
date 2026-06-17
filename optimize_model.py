@@ -270,9 +270,9 @@ if __name__ == "__main__":
 
     #print(best_models)
 
-    #joblib.dump(best_models, 'models/best_models.joblib')
-    #best_models = joblib.load('models/best_models.joblib')
+    #joblib.dump(best_models, 'best_models.joblib')
+    #best_models = joblib.load('best_models.joblib')
 
     gb_reg = best_models['GradientBoostingRegressor']
     gb_reg.fit(X_train, y_train.values.ravel())
-    joblib.dump(gb_reg, 'models/fitted_gb_reg.joblib')
+    joblib.dump(gb_reg, 'fitted_gb_reg.joblib')
