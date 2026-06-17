@@ -7,11 +7,9 @@ from sklearn.ensemble import (RandomForestRegressor, ExtraTreesRegressor, AdaBoo
                               GradientBoostingRegressor, VotingRegressor, StackingRegressor)
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import make_scorer, mean_squared_error
+from sklearn.model_selection import cross_val_score
 from sklearn.base import clone
 import numpy as np
-import pandas as pd
 import joblib
 from process_pvgis import process_pvgis
 
