@@ -129,7 +129,7 @@ def run_bayes_search(model_set, n_iter=50):
         opt = BayesSearchCV(
             estimator=model,
             search_spaces=search_space,
-            n_iter=50,
+            n_iter=n_iter,
             cv=3,
             scoring="neg_mean_absolute_error",
             n_jobs=-1,
@@ -163,20 +163,20 @@ def get_best_models(model_results):
 
     return best_models
 
-def get_individual_scores(best_models):
-    individual_scores = {}
-    for name, model in best_models.items():
-        scores = cross_val_score(model, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
-        individual_scores[name] = np.mean(scores)
+#def get_individual_scores(best_models):
+#    individual_scores = {}
+#    for name, model in best_models.items():
+#        scores = cross_val_score(model, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+#        individual_scores[name] = np.mean(scores)
+#
+#    print("\nIndividual Model Mean CV Scores:")
+#    for name, score in individual_scores.items():
+#        print(f"{name}: {score}")
+#
+#    return individual_scores
 
-    print("\nIndividual Model Mean CV Scores:")
-    for name, score in individual_scores.items():
-        print(f"{name}: {score}")
-
-    return individual_scores
-
-def get_weights(individual_scores):
-    inv_scores = {name: 1 / (1 + score) for name, score in individual_scores.items()}
+def get_weights(best_results):
+    inv_scores = {name: 1 / (1 + score['best_score']) for name, score in best_results.items()}
     total = sum(inv_scores.values())
     weights = [inv_scores[name] / total for name in best_models]
 
@@ -239,18 +239,11 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = process_pvgis(PVGIS_filename)
 
     models = create_models()
-
-    #results = run_bayes_search(create_models())
-
-    best_models = get_best_models(
-        run_bayes_search(models)
-    )
+    best_results = run_bayes_search(models, n_iter = 50)
+    best_models = get_best_models(best_results)
 
     #individual_scores = get_individual_scores(best_models)
-
-    weights = get_weights(
-        get_individual_scores(best_models)
-    )
+    weights = get_weights(best_results)
 
     voting_regressor = create_voting_regressor(best_models)
     voting_scores = cross_val_score(
