@@ -282,6 +282,36 @@ if __name__ == "__main__":
 
     print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
 
-    gb_reg = best_models['GradientBoostingRegressor']
-    gb_reg.fit(X_train, y_train.values.ravel())
-    joblib.dump(gb_reg, 'fitted_gb_reg.joblib')
+    ensemble_results = {
+        'VotingRegressor': {
+            'model': voting_regressor,
+            'best_score': np.mean(voting_weights_scores)
+        },
+        'VotingRegressorWeights': {
+            'model': voting_regressor_weights,
+            'best_score': np.mean(voting_weights_scores)
+        },
+        'StackingRegressor': {
+            'model': stacking_regressor,
+            'best_score': np.mean(stacking_scores)
+        },
+        'StackingRegressorAll': {
+            'model': stacking_regressor_all,
+            'best_score': np.mean(stacking_all_scores)
+        }
+    }
+
+    best_results = {**best_results, **ensemble_results}
+
+    best_score = -np.inf
+    best_model_name = ""
+    for name, model in best_results.items():
+        if model['best_score'] > best_score:
+            best_score = model['best_score']
+            final_model = model['model']
+            best_model_name = name
+
+    print("Best Model:", best_model_name)
+
+    final_model.fit(X_train, y_train.values.ravel())
+    joblib.dump(final_model, 'fitted_best_model.joblib')
