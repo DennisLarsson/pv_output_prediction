@@ -15,7 +15,9 @@ from process_pvgis import process_pvgis
 
 def get_search_spaces():
     search_spaces = {
-        'LinearRegression': {},
+        'LinearRegression': {
+            'fit_intercept': Categorical([True, False]),
+        },
 
         'DecisionTreeRegressor': {
             'max_depth': Integer(3, 30, 'uniform'),
