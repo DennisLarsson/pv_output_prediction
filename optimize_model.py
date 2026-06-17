@@ -213,7 +213,7 @@ def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
     return stacking_regressor
 
 
-def print_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores):
+def print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores):
     print("Voting Regressor CV Scores:", voting_scores)
     print("Mean CV Score:", np.mean(voting_scores))
     print()
@@ -234,34 +234,62 @@ if __name__ == "__main__":
 
     models = create_models()
 
-    results = run_bayes_search(models)
+    #results = run_bayes_search(create_models())
 
-    best_models = get_best_models(results)
+    best_models = get_best_models(
+        run_bayes_search(models)
+    )
 
-    individual_scores = get_individual_scores(best_models)
+    #individual_scores = get_individual_scores(best_models)
 
-    weights = get_weights(individual_scores)
+    weights = get_weights(
+        get_individual_scores(best_models)
+    )
 
     voting_regressor = create_voting_regressor(best_models)
+    voting_scores = cross_val_score(
+        voting_regressor,
+        X_train,
+        y_train.values.ravel(),
+        cv=3,
+        scoring="neg_mean_absolute_error"
+    )
+
+    #voting_regressor.fit(X_train, y_train.values.ravel())
+
     voting_regressor_weights = create_voting_regressor(best_models, weights)
+    voting_weights_scores = cross_val_score(
+        voting_regressor_weights,
+        X_train,
+        y_train.values.ravel(),
+        cv=3,
+        scoring="neg_mean_absolute_error"
+    )
 
-    voting_scores = cross_val_score(voting_regressor, X_train, y_train.values.ravel(), cv=3,
-                                    scoring="neg_mean_absolute_error")
-
-
-    voting_weights_scores = cross_val_score(voting_regressor_weights, X_train, y_train.values.ravel(), cv=3,
-                                            scoring="neg_mean_absolute_error")
+    #voting_regressor_weights.fit(X_train, y_train.values.ravel())
 
     stacking_regressor = create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor')
+    stacking_scores = cross_val_score(
+        stacking_regressor,
+        X_train,
+        y_train.values.ravel(),
+        cv=3,
+        scoring="neg_mean_absolute_error"
+        )
+
+    #stacking_regressor.fit(X_train, y_train.values.ravel())
+
     stacking_regressor_all = create_stacking_regressor(models, all_model=True, final_estimator='Ridge')
+    stacking_all_scores = cross_val_score(
+        stacking_regressor_all,
+        X_train,
+        y_train.values.ravel(),
+        cv=3,
+        scoring="neg_mean_absolute_error")
 
-    stacking_scores = cross_val_score(stacking_regressor, X_train, y_train.values.ravel(), cv=3,
-                                      scoring="neg_mean_absolute_error")
+    #stacking_regressor_all.fit(X_train, y_train.values.ravel())
 
-    stacking_all_scores = cross_val_score(stacking_regressor_all, X_train, y_train.values.ravel(), cv=3,
-                                          scoring="neg_mean_absolute_error")
-
-    print_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
+    print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
 
     gb_reg = best_models['GradientBoostingRegressor']
     gb_reg.fit(X_train, y_train.values.ravel())
