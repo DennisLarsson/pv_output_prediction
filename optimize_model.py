@@ -254,8 +254,6 @@ if __name__ == "__main__":
         scoring="neg_mean_absolute_error"
     )
 
-    #voting_regressor.fit(X_train, y_train.values.ravel())
-
     voting_regressor_weights = create_voting_regressor(best_models, weights)
     voting_weights_scores = cross_val_score(
         voting_regressor_weights,
@@ -264,8 +262,6 @@ if __name__ == "__main__":
         cv=3,
         scoring="neg_mean_absolute_error"
     )
-
-    #voting_regressor_weights.fit(X_train, y_train.values.ravel())
 
     stacking_regressor = create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor')
     stacking_scores = cross_val_score(
@@ -276,8 +272,6 @@ if __name__ == "__main__":
         scoring="neg_mean_absolute_error"
         )
 
-    #stacking_regressor.fit(X_train, y_train.values.ravel())
-
     stacking_regressor_all = create_stacking_regressor(models, all_model=True, final_estimator='Ridge')
     stacking_all_scores = cross_val_score(
         stacking_regressor_all,
@@ -285,8 +279,6 @@ if __name__ == "__main__":
         y_train.values.ravel(),
         cv=3,
         scoring="neg_mean_absolute_error")
-
-    #stacking_regressor_all.fit(X_train, y_train.values.ravel())
 
     print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
 
