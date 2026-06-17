@@ -258,20 +258,13 @@ if __name__ == "__main__":
     stacking_regressor = create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor')
     stacking_regressor_all = create_stacking_regressor(models, all_model=True, final_estimator='Ridge')
 
-    #stacking_regressor.fit(X_train, y_train.values.ravel())
     stacking_scores = cross_val_score(stacking_regressor, X_train, y_train.values.ravel(), cv=3,
                                       scoring="neg_mean_absolute_error")
 
-    #stacking_regressor_all.fit(X_train, y_train.values.ravel())
     stacking_all_scores = cross_val_score(stacking_regressor_all, X_train, y_train.values.ravel(), cv=3,
                                           scoring="neg_mean_absolute_error")
 
     print_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
-
-    #print(best_models)
-
-    #joblib.dump(best_models, 'best_models.joblib')
-    #best_models = joblib.load('best_models.joblib')
 
     gb_reg = best_models['GradientBoostingRegressor']
     gb_reg.fit(X_train, y_train.values.ravel())
