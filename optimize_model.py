@@ -92,6 +92,7 @@ def get_search_spaces():
     return search_spaces
 
 def create_models():
+    print("Creating models...")
     scaled_models = {
         'LinearSVR': (Pipeline([('scaler', StandardScaler()), ('model', LinearSVR())]),
                       get_search_spaces()['LinearSVR']),
@@ -115,7 +116,8 @@ def create_models():
     models = {**scaled_models, **unscaled_models}
     return models
 
-def run_bayes_search(model_set):
+def run_bayes_search(model_set, n_iter=50):
+    print("Running Bayes Search...")
     results = {}
     for name, (model, search_space) in model_set.items():
         if not search_space:
@@ -179,6 +181,7 @@ def get_weights(individual_scores):
     return weights
 
 def create_voting_regressor(models, weights=None):
+    print("Creating voting regressor...")
     voting_regressor = VotingRegressor(
         estimators=[(name, model) for name, model in models.items()],
         n_jobs=-1,
@@ -188,6 +191,7 @@ def create_voting_regressor(models, weights=None):
     return voting_regressor
 
 def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
+    print("Creating stacking regressor...")
     if all_model:
         stacking_regressor = StackingRegressor(
             estimators=[(name, model) for name, model in best_models.items()],
