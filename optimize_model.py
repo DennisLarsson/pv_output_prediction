@@ -247,11 +247,10 @@ if __name__ == "__main__":
     voting_regressor = create_voting_regressor(best_models)
     voting_regressor_weights = create_voting_regressor(best_models, weights)
 
-    #voting_regressor.fit(X_train, y_train.values.ravel())
     voting_scores = cross_val_score(voting_regressor, X_train, y_train.values.ravel(), cv=3,
                                     scoring="neg_mean_absolute_error")
 
-    #voting_regressor_weights.fit(X_train, y_train.values.ravel())
+
     voting_weights_scores = cross_val_score(voting_regressor_weights, X_train, y_train.values.ravel(), cv=3,
                                             scoring="neg_mean_absolute_error")
 
