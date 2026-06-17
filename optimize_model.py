@@ -23,7 +23,7 @@ def get_search_spaces():
             'max_depth': Integer(3, 30, 'uniform'),
             'min_samples_split': Integer(2, 50, 'uniform'),
             'min_samples_leaf': Integer(1, 25, 'uniform'),
-            'criterion': Categorical(['squared_error', 'friedman_mse', 'absolute_error']),
+            'criterion': Categorical(['absolute_error', 'squared_error', 'poisson']),
         },
 
         'RandomForestRegressor': {
