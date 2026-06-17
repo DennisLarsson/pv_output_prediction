@@ -1,0 +1,232 @@
+from skopt import BayesSearchCV
+from skopt.space import Real, Integer, Categorical
+from sklearn.linear_model import LinearRegression, SGDRegressor, Ridge, Lasso, ElasticNet
+from sklearn.svm import LinearSVR
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoostRegressor, GradientBoostingRegressor, VotingRegressor, StackingRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import make_scorer, mean_squared_error
+from sklearn.base import clone
+import numpy as np
+import pandas as pd
+import joblib
+from process_pvgis import process_pvgis
+
+PVGIS_filename = "data/Timeseries_59.246_18.035_SA3_1kWp_crystSi_14_42deg_0deg_2022_2023.csv"
+
+X_train, X_test, y_train, y_test = process_pvgis(PVGIS_filename)
+
+def get_search_spaces():
+    search_spaces = {
+        'LinearRegression': {},
+
+        'DecisionTreeRegressor': {
+            'max_depth': Integer(3, 30, 'uniform'),
+            'min_samples_split': Integer(2, 50, 'uniform'),
+            'min_samples_leaf': Integer(1, 25, 'uniform'),
+            'criterion': Categorical(['squared_error', 'friedman_mse', 'absolute_error']),
+        },
+
+        'RandomForestRegressor': {
+            'n_estimators': Integer(100, 1000, 'uniform'),
+            'max_depth': Integer(3, 30, 'uniform'),
+            'min_samples_split': Integer(2, 50, 'uniform'),
+            'min_samples_leaf': Integer(1, 25, 'uniform'),
+            'bootstrap': Categorical([True, False]),
+        },
+
+        'LinearSVR': {
+            'model__C': Real(0.01, 1000, 'log-uniform'),
+            'model__epsilon': Real(0.001, 5, 'log-uniform'),
+            'model__loss': Categorical(['epsilon_insensitive', 'squared_epsilon_insensitive']),
+            'model__max_iter': Integer(10000, 100000, 'uniform'),
+        },
+
+        'SGDRegressor': {
+            'model__alpha': Real(1e-6, 1, 'log-uniform'),
+            'model__max_iter': Integer(100, 2000, 'uniform'),
+            'model__tol': Real(1e-5, 1e-2, 'log-uniform'),
+            'model__penalty': Categorical(['l2', 'l1', 'elasticnet']),
+            'model__learning_rate': Categorical(['invscaling', 'constant', 'adaptive']),
+        },
+
+        'Ridge': {
+            'model__alpha': Real(1e-4, 100, 'log-uniform'),
+            'model__fit_intercept': Categorical([True, False]),
+            'model__solver': Categorical(['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']),
+        },
+
+        'Lasso': {
+            'model__alpha': Real(1e-4, 100, 'log-uniform'),
+            'model__fit_intercept': Categorical([True, False]),
+            'model__selection': Categorical(['cyclic', 'random']),
+        },
+
+        'ElasticNet': {
+            'model__alpha': Real(1e-4, 100, 'log-uniform'),
+            'model__l1_ratio': Real(0.01, 1.0, 'uniform'),
+            'model__fit_intercept': Categorical([True, False]),
+            'model__selection': Categorical(['cyclic', 'random']),
+        },
+
+        'ExtraTreesRegressor': {
+            'n_estimators': Integer(100, 1000, 'uniform'),
+            'max_depth': Integer(3, 30, 'uniform'),
+            'min_samples_split': Integer(2, 50, 'uniform'),
+            'min_samples_leaf': Integer(1, 25, 'uniform'),
+            'bootstrap': Categorical([True, False]),
+        },
+
+        'AdaBoostRegressor': {
+            'n_estimators': Integer(100, 1000, 'uniform'),
+            'learning_rate': Real(0.001, 0.5, 'log-uniform'),
+            'loss': Categorical(['linear', 'square', 'exponential']),
+        },
+
+        'GradientBoostingRegressor': {
+            'n_estimators': Integer(100, 1000, 'uniform'),
+            'learning_rate': Real(0.001, 0.5, 'log-uniform'),
+            'max_depth': Integer(3, 15, 'uniform'),
+            'min_samples_split': Integer(2, 50, 'uniform'),
+            'min_samples_leaf': Integer(1, 25, 'uniform'),
+            'subsample': Real(0.5, 1.0, 'uniform'),
+        },
+    }
+    return search_spaces
+
+scaled_models = {
+    'LinearSVR': (Pipeline([('scaler', StandardScaler()), ('model', LinearSVR())]), get_search_spaces()['LinearSVR']),
+    'SGDRegressor': (Pipeline([('scaler', StandardScaler()), ('model', SGDRegressor())]), get_search_spaces()['SGDRegressor']),
+    'Ridge': (Pipeline([('scaler', StandardScaler()), ('model', Ridge())]), get_search_spaces()['Ridge']),
+    'Lasso': (Pipeline([('scaler', StandardScaler()), ('model', Lasso())]), get_search_spaces()['Lasso']),
+    'ElasticNet': (Pipeline([('scaler', StandardScaler()), ('model', ElasticNet())]), get_search_spaces()['ElasticNet']),
+}
+
+unscaled_models = {
+    'LinearRegression': (LinearRegression(), get_search_spaces()['LinearRegression']),
+    'DecisionTreeRegressor': (DecisionTreeRegressor(), get_search_spaces()['DecisionTreeRegressor']),
+    'RandomForestRegressor': (RandomForestRegressor(), get_search_spaces()['RandomForestRegressor']),
+    'ExtraTreesRegressor': (ExtraTreesRegressor(), get_search_spaces()['ExtraTreesRegressor']),
+    'AdaBoostRegressor': (AdaBoostRegressor(), get_search_spaces()['AdaBoostRegressor']),
+    'GradientBoostingRegressor': (GradientBoostingRegressor(), get_search_spaces()['GradientBoostingRegressor']),
+}
+
+models = {**scaled_models, **unscaled_models}
+
+results = {}
+for name, (model, search_space) in models.items():
+    if not search_space:
+        results[name] = {'model': model, 'best_params': {}, 'best_score': None}
+        continue
+
+    opt = BayesSearchCV(
+        estimator=model,
+        search_spaces=search_space,
+        n_iter=50,
+        cv=3,
+        scoring="neg_mean_absolute_error",
+        n_jobs=-1,
+        random_state=42,
+    )
+
+    opt.fit(X_train, y_train.values.ravel())
+
+    results[name] = {
+        'model': opt,
+        'best_params': opt.best_params_,
+        'best_score': opt.best_score_,
+    }
+
+for name, result in results.items():
+    print(f"{name}:")
+    print(f"  Best parameters: {result['best_params']}")
+    print(f"  Best score: {result['best_score']}")
+    print()
+
+best_models = {}
+for name, result in results.items():
+    if result['best_params']:
+        best_model = clone(result['model'].best_estimator_)
+        best_models[name] = best_model
+    else:
+        best_models[name] = result['model']
+
+individual_scores = {}
+for name, model in best_models.items():
+    scores = cross_val_score(model, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+    individual_scores[name] = np.mean(scores)
+
+print("\nIndividual Model Mean CV Scores:")
+for name, score in individual_scores.items():
+    print(f"{name}: {score}")
+
+inv_scores = {name: 1 / (1 + score) for name, score in individual_scores.items()}
+total = sum(inv_scores.values())
+weights = [inv_scores[name] / total for name in best_models]
+
+voting_regressor = VotingRegressor(
+    estimators=[(name, model) for name, model in best_models.items()],
+    n_jobs=-1,
+)
+
+voting_regressor_weights = VotingRegressor(
+    estimators=[(name, model) for name, model in best_models.items()],
+    n_jobs=-1,
+    weights=weights,
+)
+
+base_models = [
+    ('LinearSVR', best_models['LinearSVR']),
+    ('GradientBoostingRegressor', best_models['GradientBoostingRegressor']),
+    ('ExtraTreesRegressor', best_models['ExtraTreesRegressor']),
+    ('Lasso', best_models['Lasso']),
+]
+
+stacking_regressor = StackingRegressor(
+    estimators=base_models,
+    final_estimator=clone(best_models['RandomForestRegressor']),
+    cv=3,
+    n_jobs=-1
+)
+
+stacking_regressor_all = StackingRegressor(
+    estimators=[(name, model) for name, model in best_models.items()],
+    final_estimator=clone(best_models['Ridge']),
+    cv=3,
+    n_jobs=-1
+)
+
+voting_regressor.fit(X_train, y_train.values.ravel())
+voting_regressor_weights.fit(X_train, y_train.values.ravel())
+stacking_regressor.fit(X_train, y_train.values.ravel())
+stacking_regressor_all.fit(X_train, y_train.values.ravel())
+
+voting_scores = cross_val_score(voting_regressor, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+voting_weights_scores = cross_val_score(voting_regressor_weights, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+stacking_scores = cross_val_score(stacking_regressor, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+stacking_all_scores = cross_val_score(stacking_regressor_all, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
+
+# Print results
+print("Voting Regressor CV Scores:", voting_scores)
+print("Mean CV Score:", np.mean(voting_scores))
+print()
+print("Voting Regressor weights CV Scores:", voting_weights_scores)
+print("Mean CV Score:", np.mean(voting_weights_scores))
+print()
+print("Stacking Regressor CV Scores:", stacking_scores)
+print("Mean CV Score:", np.mean(stacking_scores))
+print()
+print("Stacking Regressor all CV Scores:", stacking_all_scores)
+print("Mean CV Score:", np.mean(stacking_all_scores))
+
+print(best_models)
+
+
+joblib.dump(best_models, 'models/best_models.joblib')
+
+best_models = joblib.load('models/best_models.joblib')
+gb_reg = best_models['GradientBoostingRegressor']
+gb_reg.fit(X_train, y_train.values.ravel())
+joblib.dump(gb_reg, 'models/fitted_gb_reg.joblib')
