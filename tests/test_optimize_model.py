@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import numpy as np
-import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.svm import LinearSVR
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor
