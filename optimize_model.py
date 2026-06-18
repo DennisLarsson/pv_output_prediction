@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
 
-    models = create_models()
+    models = create_models(seed=seed)
     best_results = run_bayes_search(models, n_iter = bayes_n_iter, threads=threads, seed=seed)
     best_models = get_best_models(best_results)
 
