@@ -313,6 +313,7 @@ if __name__ == "__main__":
     }
 
     best_results = {**best_results, **ensemble_results}
+    joblib.dump(best_results, "model_results.joblib")
 
     best_score = -np.inf
     best_model_name = ""
@@ -322,7 +323,7 @@ if __name__ == "__main__":
             final_model = model['model']
             best_model_name = name
 
-    print("Best Model:", best_model_name)
+    print("Best Model:", best_model_name, "Best Model Score:", best_score)
 
     final_model.fit(X_train, y_train.values.ravel())
     joblib.dump(final_model, output_file)
