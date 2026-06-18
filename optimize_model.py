@@ -241,7 +241,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('pvgis_filename')
     parser.add_argument('-n','--bayes_n_iter', default=50)
-    parser.add_argument('-o', '--output', default='fitted_best_model.joblib')
+    parser.add_argument('-o', '--output', default='trained_fitted_model/fitted_best_model.joblib')
     parser.add_argument('-s', '--seed', default=None)
     parser.add_argument('-v', '--verbose', default=False, action='store_true')
     parser.add_argument('-T', '--threads', default=-1)
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     }
 
     best_results = {**best_results, **ensemble_results}
-    joblib.dump(best_results, "model_results.joblib")
+    joblib.dump(best_results, "trained_fitted_model/model_results.joblib")
 
     best_score = -np.inf
     best_model_name = ""
