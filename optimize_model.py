@@ -11,6 +11,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.base import clone
 import numpy as np
 import joblib
+import argparse
 from process_pvgis import process_pvgis
 
 def get_search_spaces():
@@ -206,7 +207,6 @@ def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
 
     return stacking_regressor
 
-
 def print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores):
     print("Voting Regressor CV Scores:", voting_scores)
     print("Mean CV Score:", np.mean(voting_scores))
@@ -222,12 +222,20 @@ def print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores
 
 if __name__ == "__main__":
 
-    PVGIS_filename = "data/Timeseries_59.246_18.035_SA3_1kWp_crystSi_14_42deg_0deg_2022_2023.csv"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('pvgis_filename')
+    parser.add_argument('-n','--bayes_n_iter', default=50)
+    parser.add_argument('-o', '--output', default='fitted_best_model.joblib')
 
-    X_train, X_test, y_train, y_test = process_pvgis(PVGIS_filename)
+    args = parser.parse_args()
+    pvgis_filename = args.pvgis_filename
+    bayes_n_iter = int(args.bayes_n_iter)
+    output_file = args.output
+
+    X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
 
     models = create_models()
-    best_results = run_bayes_search(models, n_iter = 50)
+    best_results = run_bayes_search(models, n_iter = bayes_n_iter)
     best_models = get_best_models(best_results)
 
     #individual_scores = get_individual_scores(best_models)
@@ -302,4 +310,4 @@ if __name__ == "__main__":
     print("Best Model:", best_model_name)
 
     final_model.fit(X_train, y_train.values.ravel())
-    joblib.dump(final_model, 'fitted_best_model.joblib')
+    joblib.dump(final_model, output_file)
