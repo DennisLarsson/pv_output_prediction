@@ -163,18 +163,6 @@ def get_best_models(model_results):
 
     return best_models
 
-#def get_individual_scores(best_models):
-#    individual_scores = {}
-#    for name, model in best_models.items():
-#        scores = cross_val_score(model, X_train, y_train.values.ravel(), cv=3, scoring="neg_mean_absolute_error")
-#        individual_scores[name] = np.mean(scores)
-#
-#    print("\nIndividual Model Mean CV Scores:")
-#    for name, score in individual_scores.items():
-#        print(f"{name}: {score}")
-#
-#    return individual_scores
-
 def get_weights(best_results):
     inv_scores = {name: 1 / (1 + score['best_score']) for name, score in best_results.items()}
     total = sum(inv_scores.values())
