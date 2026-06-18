@@ -17,7 +17,6 @@ class TestOptimizeModel(unittest.TestCase):
         self.assertIn('RandomForestRegressor', search_spaces)
 
     def test_create_stacking_regressor(self):
-        seed = 42
         # Mock models
         mock_models = [
             ('lr', LinearRegression()),

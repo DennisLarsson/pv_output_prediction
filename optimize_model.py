@@ -183,7 +183,7 @@ def create_voting_regressor(models, weights=None):
 
     return voting_regressor
 
-def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
+def create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=None):
     print("Creating stacking regressor...")
     kf = KFold(n_splits=3, shuffle=True, random_state=seed)
     if all_model:
@@ -274,13 +274,13 @@ if __name__ == "__main__":
     )
 
     stacking_regressor, stacking_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor'),
+        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor', seed=seed),
         X_train,
         y_train.values.ravel()
     )
 
     stacking_regressor_all, stacking_all_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=True, final_estimator='Ridge'),
+        create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=seed),
         X_train,
         y_train.values.ravel()
     )
