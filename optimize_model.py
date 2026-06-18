@@ -94,7 +94,7 @@ def get_search_spaces():
     }
     return search_spaces
 
-def create_models():
+def create_models(seed=None):
     print("Creating models...")
     scaled_models = {
         'LinearSVR': (Pipeline([('scaler', StandardScaler()), ('model', LinearSVR(random_state=seed))]),
@@ -119,7 +119,7 @@ def create_models():
     models = {**scaled_models, **unscaled_models}
     return models
 
-def run_bayes_search(model_set, n_iter=50):
+def run_bayes_search(model_set, n_iter=50, threads = -1, seed=None):
     print("Running Bayes Search...")
     results = {}
     for name, (model, search_space) in model_set.items():
@@ -173,7 +173,7 @@ def get_weights(best_results):
 
     return weights
 
-def create_voting_regressor(models, weights=None):
+def create_voting_regressor(models, weights=None, threads=-1):
     print("Creating voting regressor...")
     voting_regressor = VotingRegressor(
         estimators=[(name, model) for name, model in models.items()],
@@ -183,7 +183,8 @@ def create_voting_regressor(models, weights=None):
 
     return voting_regressor
 
-def create_stacking_regressor(best_models, all_model=True, final_estimator='Ridge', seed=None):
+def create_stacking_regressor(best_models, all_model=True, final_estimator='Ridge',
+                              seed=None, threads=-1):
     print("Creating stacking regressor...")
     kf = KFold(n_splits=3, shuffle=True, random_state=seed)
     if all_model:
@@ -210,7 +211,7 @@ def create_stacking_regressor(best_models, all_model=True, final_estimator='Ridg
 
     return stacking_regressor
 
-def run_cross_val_score(estimator, X, y):
+def run_cross_val_score(estimator, X, y, seed=None):
     kf = KFold(n_splits=3, shuffle=True, random_state=seed)
     scores = cross_val_score(
         estimator=estimator,
@@ -256,33 +257,37 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
 
     models = create_models()
-    best_results = run_bayes_search(models, n_iter = bayes_n_iter)
+    best_results = run_bayes_search(models, n_iter = bayes_n_iter, threads=threads, seed=seed)
     best_models = get_best_models(best_results)
 
     weights = get_weights(best_results)
 
     voting_regressor, voting_scores = run_cross_val_score(
-        create_voting_regressor(best_models),
+        create_voting_regressor(best_models, threads=threads),
         X_train,
-        y_train.values.ravel()
+        y_train.values.ravel(),
+        seed=seed
     )
 
     voting_regressor_weights, voting_weights_scores = run_cross_val_score(
-        create_voting_regressor(best_models, weights),
+        create_voting_regressor(best_models, weights, threads=threads),
         X_train,
-        y_train.values.ravel()
+        y_train.values.ravel(),
+        seed=seed
     )
 
     stacking_regressor, stacking_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor', seed=seed),
+        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor', seed=seed, threads=threads),
         X_train,
-        y_train.values.ravel()
+        y_train.values.ravel(),
+        seed=seed
     )
 
     stacking_regressor_all, stacking_all_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=seed),
+        create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=seed, threads=threads),
         X_train,
-        y_train.values.ravel()
+        y_train.values.ravel(),
+        seed=seed
     )
 
     if verbose:
