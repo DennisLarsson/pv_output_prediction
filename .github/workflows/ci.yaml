@@ -19,7 +19,7 @@ jobs:
         python-version: 3.9
 
     - name: Run unittest
-      run: python -m unittest tests.test_parameter_optimization
+      run: python -m unittest tests.TestOptimizeModel
 
     - name: Run with test data
       run: bash tests/test.sh
