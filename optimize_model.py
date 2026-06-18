@@ -7,7 +7,7 @@ from sklearn.ensemble import (RandomForestRegressor, ExtraTreesRegressor, AdaBoo
                               GradientBoostingRegressor, VotingRegressor, StackingRegressor)
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, KFold
 from sklearn.base import clone
 import numpy as np
 import joblib
@@ -97,23 +97,23 @@ def get_search_spaces():
 def create_models():
     print("Creating models...")
     scaled_models = {
-        'LinearSVR': (Pipeline([('scaler', StandardScaler()), ('model', LinearSVR())]),
+        'LinearSVR': (Pipeline([('scaler', StandardScaler()), ('model', LinearSVR(random_state=seed))]),
                       get_search_spaces()['LinearSVR']),
-        'SGDRegressor': (Pipeline([('scaler', StandardScaler()), ('model', SGDRegressor())]),
+        'SGDRegressor': (Pipeline([('scaler', StandardScaler()), ('model', SGDRegressor(random_state=seed))]),
                          get_search_spaces()['SGDRegressor']),
-        'Ridge': (Pipeline([('scaler', StandardScaler()), ('model', Ridge())]), get_search_spaces()['Ridge']),
-        'Lasso': (Pipeline([('scaler', StandardScaler()), ('model', Lasso())]), get_search_spaces()['Lasso']),
-        'ElasticNet': (Pipeline([('scaler', StandardScaler()), ('model', ElasticNet())]),
+        'Ridge': (Pipeline([('scaler', StandardScaler()), ('model', Ridge(random_state=seed))]), get_search_spaces()['Ridge']),
+        'Lasso': (Pipeline([('scaler', StandardScaler()), ('model', Lasso(random_state=seed))]), get_search_spaces()['Lasso']),
+        'ElasticNet': (Pipeline([('scaler', StandardScaler()), ('model', ElasticNet(random_state=seed))]),
                        get_search_spaces()['ElasticNet']),
     }
 
     unscaled_models = {
         'LinearRegression': (LinearRegression(), get_search_spaces()['LinearRegression']),
-        'DecisionTreeRegressor': (DecisionTreeRegressor(), get_search_spaces()['DecisionTreeRegressor']),
-        'RandomForestRegressor': (RandomForestRegressor(), get_search_spaces()['RandomForestRegressor']),
-        'ExtraTreesRegressor': (ExtraTreesRegressor(), get_search_spaces()['ExtraTreesRegressor']),
-        'AdaBoostRegressor': (AdaBoostRegressor(), get_search_spaces()['AdaBoostRegressor']),
-        'GradientBoostingRegressor': (GradientBoostingRegressor(), get_search_spaces()['GradientBoostingRegressor']),
+        'DecisionTreeRegressor': (DecisionTreeRegressor(random_state=seed), get_search_spaces()['DecisionTreeRegressor']),
+        'RandomForestRegressor': (RandomForestRegressor(random_state=seed), get_search_spaces()['RandomForestRegressor']),
+        'ExtraTreesRegressor': (ExtraTreesRegressor(random_state=seed), get_search_spaces()['ExtraTreesRegressor']),
+        'AdaBoostRegressor': (AdaBoostRegressor(random_state=seed), get_search_spaces()['AdaBoostRegressor']),
+        'GradientBoostingRegressor': (GradientBoostingRegressor(random_state=seed), get_search_spaces()['GradientBoostingRegressor']),
     }
 
     models = {**scaled_models, **unscaled_models}
@@ -127,14 +127,15 @@ def run_bayes_search(model_set, n_iter=50):
             results[name] = {'model': model, 'best_params': {}, 'best_score': None}
             continue
 
+        kf = KFold(n_splits=3, shuffle=True, random_state=seed)
         opt = BayesSearchCV(
             estimator=model,
             search_spaces=search_space,
             n_iter=n_iter,
-            cv=3,
+            cv=kf,
             scoring="neg_mean_absolute_error",
-            n_jobs=-1,
-            random_state=42,
+            n_jobs=threads,
+            random_state=seed,
         )
 
         opt.fit(X_train, y_train.values.ravel())
@@ -175,7 +176,7 @@ def create_voting_regressor(models, weights=None):
     print("Creating voting regressor...")
     voting_regressor = VotingRegressor(
         estimators=[(name, model) for name, model in models.items()],
-        n_jobs=-1,
+        n_jobs=threads,
         weights=weights,
     )
 
@@ -183,12 +184,13 @@ def create_voting_regressor(models, weights=None):
 
 def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
     print("Creating stacking regressor...")
+    kf = KFold(n_splits=3, shuffle=True, random_state=seed)
     if all_model:
         stacking_regressor = StackingRegressor(
             estimators=[(name, model) for name, model in best_models.items()],
             final_estimator=clone(best_models[final_estimator]),
-            cv=3,
-            n_jobs=-1
+            cv=kf,
+            n_jobs=threads
         )
     else:
         base_models = [
@@ -203,9 +205,23 @@ def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
             final_estimator=clone(best_models[final_estimator]),
             cv=3,
             n_jobs=-1
+            cv=kf,
+            n_jobs=threads
         )
 
     return stacking_regressor
+
+def run_cross_val_score(estimator, X, y):
+    kf = KFold(n_splits=3, shuffle=True, random_state=seed)
+    scores = cross_val_score(
+        estimator=estimator,
+        X=X,
+        y=y,
+        cv=kf,
+        scoring="neg_mean_absolute_error"
+    )
+
+    return estimator, scores
 
 def print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores):
     print("Voting Regressor CV Scores:", voting_scores)
@@ -226,11 +242,15 @@ if __name__ == "__main__":
     parser.add_argument('pvgis_filename')
     parser.add_argument('-n','--bayes_n_iter', default=50)
     parser.add_argument('-o', '--output', default='fitted_best_model.joblib')
+    parser.add_argument('-s', '--seed', default=None)
+    parser.add_argument('-T', '--threads', default=-1)
 
     args = parser.parse_args()
     pvgis_filename = args.pvgis_filename
     bayes_n_iter = int(args.bayes_n_iter)
     output_file = args.output
+    seed = int(args.seed)
+    threads = int(args.threads)
 
     X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
 
@@ -241,40 +261,29 @@ if __name__ == "__main__":
     #individual_scores = get_individual_scores(best_models)
     weights = get_weights(best_results)
 
-    voting_regressor = create_voting_regressor(best_models)
-    voting_scores = cross_val_score(
-        voting_regressor,
+    voting_regressor, voting_scores = run_cross_val_score(
+        create_voting_regressor(best_models),
         X_train,
-        y_train.values.ravel(),
-        cv=3,
-        scoring="neg_mean_absolute_error"
+        y_train.values.ravel()
     )
 
-    voting_regressor_weights = create_voting_regressor(best_models, weights)
-    voting_weights_scores = cross_val_score(
-        voting_regressor_weights,
+    voting_regressor_weights, voting_weights_scores = run_cross_val_score(
+        create_voting_regressor(best_models, weights),
         X_train,
-        y_train.values.ravel(),
-        cv=3,
-        scoring="neg_mean_absolute_error"
+        y_train.values.ravel()
     )
 
-    stacking_regressor = create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor')
-    stacking_scores = cross_val_score(
-        stacking_regressor,
+    stacking_regressor, stacking_scores = run_cross_val_score(
+        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor'),
         X_train,
-        y_train.values.ravel(),
-        cv=3,
-        scoring="neg_mean_absolute_error"
-        )
+        y_train.values.ravel()
+    )
 
-    stacking_regressor_all = create_stacking_regressor(models, all_model=True, final_estimator='Ridge')
-    stacking_all_scores = cross_val_score(
-        stacking_regressor_all,
+    stacking_regressor_all, stacking_all_scores = run_cross_val_score(
+        create_stacking_regressor(models, all_model=True, final_estimator='Ridge'),
         X_train,
-        y_train.values.ravel(),
-        cv=3,
-        scoring="neg_mean_absolute_error")
+        y_train.values.ravel()
+    )
 
     print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
 
