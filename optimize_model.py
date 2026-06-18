@@ -250,7 +250,7 @@ if __name__ == "__main__":
     pvgis_filename = args.pvgis_filename
     bayes_n_iter = int(args.bayes_n_iter)
     output_file = args.output
-    seed = int(args.seed)
+    seed = (args.seed if args.seed is None else int(args.seed))
     verbose = args.verbose
     threads = int(args.threads)
 
