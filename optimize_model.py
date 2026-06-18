@@ -146,11 +146,12 @@ def run_bayes_search(model_set, n_iter=50):
             'best_score': opt.best_score_,
         }
 
-    for name, result in results.items():
-        print(f"{name}:")
-        print(f"  Best parameters: {result['best_params']}")
-        print(f"  Best score: {result['best_score']}")
-        print()
+    if verbose:
+        for name, result in results.items():
+            print(f"{name}:")
+            print(f"  Best parameters: {result['best_params']}")
+            print(f"  Best score: {result['best_score']}")
+            print()
 
     return results
 
@@ -243,6 +244,7 @@ if __name__ == "__main__":
     parser.add_argument('-n','--bayes_n_iter', default=50)
     parser.add_argument('-o', '--output', default='fitted_best_model.joblib')
     parser.add_argument('-s', '--seed', default=None)
+    parser.add_argument('-v', '--verbose', default=False, action='store_true')
     parser.add_argument('-T', '--threads', default=-1)
 
     args = parser.parse_args()
@@ -250,6 +252,7 @@ if __name__ == "__main__":
     bayes_n_iter = int(args.bayes_n_iter)
     output_file = args.output
     seed = int(args.seed)
+    verbose = args.verbose
     threads = int(args.threads)
 
     X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
@@ -285,7 +288,8 @@ if __name__ == "__main__":
         y_train.values.ravel()
     )
 
-    print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
+    if verbose:
+        print_ensemble_results(voting_scores, voting_weights_scores, stacking_scores, stacking_all_scores)
 
     ensemble_results = {
         'VotingRegressor': {
