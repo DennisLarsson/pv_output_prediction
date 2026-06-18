@@ -2,8 +2,9 @@ import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.svm import LinearSVR
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor
 from optimize_model import get_search_spaces, create_stacking_regressor, print_ensemble_results
 
 
@@ -18,13 +19,18 @@ class TestOptimizeModel(unittest.TestCase):
 
     def test_create_stacking_regressor(self):
         # Mock models
-        mock_models = [
-            ('lr', LinearRegression()),
-            ('rf', RandomForestRegressor(n_estimators=10))
-        ]
+        mock_models = {
+            'linear_regression': LinearRegression(),
+            'RandomForestRegressor': RandomForestRegressor(),
+            'LinearSVR': LinearSVR(),
+            'GradientBoostingRegressor': GradientBoostingRegressor(n_estimators=10),
+            'ExtraTreesRegressor': ExtraTreesRegressor(n_estimators=20),
+            'Lasso': Lasso(alpha=0.1),
+            'Ridge': Ridge(alpha=0.1),
+        }
 
         # Test with all_model=False
-        stacking_regressor = create_stacking_regressor(mock_models, all_model=False, final_estimator='LinearRegression')
+        stacking_regressor = create_stacking_regressor(mock_models, all_model=False, final_estimator='RandomForestRegressor')
         self.assertIsNotNone(stacking_regressor)
 
         # Test with all_model=True
