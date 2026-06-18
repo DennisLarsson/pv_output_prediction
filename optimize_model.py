@@ -296,7 +296,7 @@ if __name__ == "__main__":
     ensemble_results = {
         'VotingRegressor': {
             'model': voting_regressor,
-            'best_score': np.mean(voting_weights_scores)
+            'best_score': np.mean(voting_scores)
         },
         'VotingRegressorWeights': {
             'model': voting_regressor_weights,
