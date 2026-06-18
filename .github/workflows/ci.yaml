@@ -20,7 +20,7 @@ jobs:
 
     - name: Install python packages
       run: |
-        pip install numpy pandas sklearn
+        pip install numpy pandas scikit-learn
 
     - name: Run unittest
       run: python -m unittest tests.test_optimize_model
