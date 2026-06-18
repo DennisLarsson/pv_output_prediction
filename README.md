@@ -1,4 +1,4 @@
-# pv_output_prediction
+# Photovoltaic output modeling and prediction using SciKit machine learning
 This is a Machine Learning project to train a model on PV output data and global irradiance in order to predict output 
 of solar panels in other data from other time series. The purpose of this project is to test and demonstrate my 
 knowledge of Machine learning. I would be happy for any input or corrections on my methodology (both ML and the coding). 
@@ -7,21 +7,25 @@ knowledge of Machine learning. I would be happy for any input or corrections on 
 It optimizes several models from SciKit-Learn (see below) using SciKit-Optimize 'BayesSearchCV', including trying 
 voting regressors and stacking regressors. The best model is then selected and saved to be used for predictions.
 
-| Regressor models          |
-|---------------------------|
-| LinearSVR                 |
-| SGDRegressor              |
-| Ridge                     |
-| Lasso                     |
-| ElasticNet                |
-| LinearRegression          |
-| DecisionTreeRegressor     |
-| RandomForestRegressor     |
-| ExtraTreesRegressor       |
-| AdaBoostRegressor         |
-| GradientBoostingRegressor |
-| VotingRegressor           |
-| StackingRegressor         |
+| Regressor models                                   | Negative MAE |
+|----------------------------------------------------|--------------|
+| LinearSVR                                          | -5.94        |
+| SGDRegressor                                       | -6.42        |
+| Ridge                                              | -6.49        |
+| Lasso                                              | -6.28        |
+| ElasticNet                                         | -6.49        |
+| LinearRegression                                   | -6.50        |
+| DecisionTreeRegressor                              | -2.58        |
+| RandomForestRegressor                              | -1.95        |
+| ExtraTreesRegressor                                | -1.76        |
+| AdaBoostRegressor                                  | -8.11        |
+| GradientBoostingRegressor                          | -1.43        |
+| __Ensemble models__                                | ---          |
+| VotingRegressor (wo/ weights)                      | -3.96        |
+| VotingRegressor (with weights)                     | -2.10        |
+| StackingRegressor (SVM, GBR, ETR, Lasso, FE*: RFR) | -1.63        |
+| StackingRegresso (All optimized models, FE*: Ridge | -1.55        |
+*FE = Final Estimator
 
 ### Input data
 The input data for training is simulated hourly PVGIS data from https://re.jrc.ec.europa.eu/pvg_tools/en/#HR for 2022 
