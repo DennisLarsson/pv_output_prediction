@@ -183,7 +183,7 @@ def create_voting_regressor(models, weights=None):
 
     return voting_regressor
 
-def create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=None):
+def create_stacking_regressor(best_models, all_model=True, final_estimator='Ridge', seed=None):
     print("Creating stacking regressor...")
     kf = KFold(n_splits=3, shuffle=True, random_state=seed)
     if all_model:
