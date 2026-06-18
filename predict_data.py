@@ -6,13 +6,15 @@ from process_smhi import process_smhi
 
 parser = argparse.ArgumentParser()
 parser.add_argument('smhi_filename')
+parser.add_argument('-m', "--model", required=True)
 parser.add_argument('-o','--output', default='predicted_pv_output_with_time.csv')
 args = parser.parse_args()
 smhi_filename = args.smhi_filename
 output_file = args.output
+model_file = args.model
 
 print("Loading model...")
-fitted_reg = joblib.load('fitted_best_model.joblib')
+fitted_reg = joblib.load(model_file)
 
 print("Processing data...")
 X, time = process_smhi(smhi_filename)
