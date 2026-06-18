@@ -11,7 +11,7 @@ def process_smhi(filename):
             df['TT'].astype(str).str.zfill(2)
     )
     df['datetime'] = pd.to_datetime(df['datetime'], format='%Y%m%d:%H')
-    raw_data = df.copy()
+    time = df['datetime'].copy()
 
     df['day_of_year'] = df['datetime'].dt.dayofyear
     df['hour_of_day'] = df['datetime'].dt.hour
@@ -22,4 +22,4 @@ def process_smhi(filename):
 
     X = df[['G(i)', 'hour_sin', 'hour_cos', 'day_sin', 'day_cos']]
 
-    return X, raw_data
+    return X, time
