@@ -259,7 +259,6 @@ if __name__ == "__main__":
     best_results = run_bayes_search(models, n_iter = bayes_n_iter)
     best_models = get_best_models(best_results)
 
-    #individual_scores = get_individual_scores(best_models)
     weights = get_weights(best_results)
 
     voting_regressor, voting_scores = run_cross_val_score(
