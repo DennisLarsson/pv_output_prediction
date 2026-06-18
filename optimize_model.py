@@ -241,10 +241,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('pvgis_filename')
     parser.add_argument('-n','--bayes_n_iter', default=50)
-    parser.add_argument('-o', '--output', default='trained_fitted_model/fitted_best_model.joblib')
+    parser.add_argument('-o', '--output', default='fitted_best_model.joblib')
     parser.add_argument('-s', '--seed', default=None)
     parser.add_argument('-v', '--verbose', default=False, action='store_true')
     parser.add_argument('-T', '--threads', default=-1)
+    parser.add_argument('-r', '--results', default='model_results.joblib')
 
     args = parser.parse_args()
     pvgis_filename = args.pvgis_filename
@@ -253,6 +254,7 @@ if __name__ == "__main__":
     seed = (args.seed if args.seed is None else int(args.seed))
     verbose = args.verbose
     threads = int(args.threads)
+    results_file = args.results
 
     X_train, X_test, y_train, y_test = process_pvgis(pvgis_filename)
 
@@ -313,7 +315,7 @@ if __name__ == "__main__":
     }
 
     best_results = {**best_results, **ensemble_results}
-    joblib.dump(best_results, "trained_fitted_model/model_results.joblib")
+    joblib.dump(best_results, results_file, compress=("bz2", 9))
 
     best_score = -np.inf
     best_model_name = ""
