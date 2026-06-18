@@ -277,14 +277,14 @@ if __name__ == "__main__":
     )
 
     stacking_regressor, stacking_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=False, final_estimator='RandomForestRegressor', seed=seed, threads=threads),
+        create_stacking_regressor(best_models, all_model=False, final_estimator='RandomForestRegressor', seed=seed, threads=threads),
         X_train,
         y_train.values.ravel(),
         seed=seed
     )
 
     stacking_regressor_all, stacking_all_scores = run_cross_val_score(
-        create_stacking_regressor(models, all_model=True, final_estimator='Ridge', seed=seed, threads=threads),
+        create_stacking_regressor(best_models, all_model=True, final_estimator='Ridge', seed=seed, threads=threads),
         X_train,
         y_train.values.ravel(),
         seed=seed
