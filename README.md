@@ -37,9 +37,9 @@ to sine and cosine to better capture their cyclical nature.
 
 The G(i) and sine and cosine time and day are used as training data and the PV output as used as labels.
 
-### trained model
+### Trained model
 The script saves the scores and models of the best estimator for each model in a file 'model_results.joblib'. The file 
-is too large to be included in this repo, but can be scrutinized here: 
+is too large to be included in this repo, but can be downloaded here: 
 https://app.filen.io/#/d/15c92524-cab5-43c4-ab59-8a63c5388468%23zrDtf9kJoJIhzpAelUm3cCPKQhuRvi3g
 
 The best model, GradientBoostingRegressor, have a mean cross-validation score of -1.43 W (Watts) negative mean absolute 
@@ -62,3 +62,6 @@ training data in the form of global irradiance and sine and cosine time and day 
 model to predict PV output for both the 2025 and 2026 dataset.
 
 The results of this can be found in the folder 'predictions'.
+
+The results of these files will be used for the 
+[Solar Battery Arbitrage AI project](https://github.com/DennisLarsson/ai_solar_battery_arbitrage)
