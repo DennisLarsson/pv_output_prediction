@@ -204,8 +204,6 @@ def create_stacking_regressor(models, all_model=True, final_estimator='Ridge'):
         stacking_regressor = StackingRegressor(
             estimators=base_models,
             final_estimator=clone(best_models[final_estimator]),
-            cv=3,
-            n_jobs=-1
             cv=kf,
             n_jobs=threads
         )
